@@ -46,7 +46,7 @@ class Board
         {
             for (int column; column < 9; ++column)
             {
-                if (this.inputArray[column][row] == 0)
+                if (matrix[column][row] == 0)
                     boolArray[column][row] = false;
                 else
                     boolArray[column][row] = true;
@@ -65,41 +65,29 @@ class Board
             foreach (column; row)
             {
                 if (!column)
+                {
+                    writeln("found 0s");
                     return false;
+                }
             }
         }
 
-        //foreach(row; this.inputArray)
-        //{
-        //    for(int i; i < 10; ++i)
-        //    {
-        //        if (!row.canFind(i))
-        //        {
-        //            writeln("invalid rows");
-        //            return false;
-        //        }
-        //    }
-        //}
+        // check that each row has values 1-9 in it
+        foreach(row; this.guessMatrix)
+        {
+            int[] testRow = row;
+            for(int i = 1; i < 10; ++i)
+            {
+                if (!testRow.canFind(i))
+                {
+                    writeln("invalid rows");
+                    return false;
+                }
+            }
+        }
 
-        //for (int i; i < 10; ++i)
-        //{
-        //    int[] tempArray;
-
-        //    foreach (row; this.inputArray)
-        //    {
-        //        tempArray ~= row[i];
-        //    }
-
-        //    if (!tempArray.canFind(i))
-        //    {
-        //        writeln("invalid invalid columns");
-        //        return false;
-        //    }
-        //}
-
-        //check each row has ints 1-9
         //check each column has ints 1-9
-        //check each "bucket" has ints 1-9
+        //check each "chunk" has ints 1-9
 
         return true;
     }
@@ -123,32 +111,37 @@ class Board
         {
             if (options.canFind(guessRow[column]))
             {
-                options = options.remove(
-                    options.countUntil(guessRow[column])
-                );
+                options = options.remove(options.countUntil(guessRow[column]));
             }
         }
 
         foreach (guessColumn; this.guessMatrix[row])
         {
             if (options.canFind(guessColumn))
-                options = options.remove(
-                    options.countUntil(guessColumn)
-                );
+                options = options.remove(options.countUntil(guessColumn));
         }
 
         // add in logic for "chunk"
+        int[3][3] chunk = getChunk(row, column);
+        foreach (guessRow; chunk)
+        {
+            foreach (guessColumn; guessRow)
+            {
+                if (options.canFind(guessColumn))
+                    options = options.remove(options.countUntil(guessColumn));
+            }
+        }
 
         if (options.length == 1)
         {
             this.guessMatrix[row][column] = options[0];
-            this.getBoardOptions();
+            this.solve();
         }
 
         return options;
     }
 
-    void getBoardOptions()
+    void solve()
     {
         for (int row; row < 9; ++row)
         {
@@ -159,6 +152,34 @@ class Board
         }
     }
 
+    private:
+    int[3][3] getChunk(int row, int column)
+    {
+        int startRow;
+        if (row < 3)
+            startRow = 0;
+        else if (row < 6)
+            startRow = 3;
+        else
+            startRow = 6;
+
+        int startColumn;
+        if (column < 3)
+            startColumn = 0;
+        else if (column < 6)
+            startColumn = 3;
+        else
+            startColumn = 6;
+
+        int[3][3] output;
+        for (int guessRow = startRow; guessRow < startRow + 3; ++guessRow)
+        {
+            for (int guessColumn = startColumn; guessColumn < startColumn + 3; ++guessColumn)
+                output[guessRow % 3][guessColumn % 3] = this.guessMatrix[guessRow][guessColumn];
+        }
+
+        return output;
+    }
 }
 
 
@@ -177,27 +198,14 @@ void main()
     ];
 
     Board board = new Board(inputArray);
-    //writeln(board.countUnknowns());
-    auto boolArray = board.createBoolMatrix(board.guessMatrix);
-    //writeln(board.checkSolved());
+    writeln(board.checkSolved());
 
-    board.getBoardOptions();
+    board.solve();
 
     foreach(row; board.guessMatrix)
     {
         writeln(row);
     }
 
-    int counter;
-
-    foreach(row; board.guessMatrix)
-    {
-        foreach(column; row)
-        {
-            if (column == 0)
-                ++counter;
-        }
-    }
-
-    writeln(counter);
+    writeln(board.checkSolved());
 }
